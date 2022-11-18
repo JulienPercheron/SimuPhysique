@@ -5,38 +5,59 @@ using UnityEngine;
 public class PolyBridge : MonoBehaviour
 {
 
-    struct Line
+    class Line
     {
         public int pointA;
         public int pointB;
-        public float longueur;
+        public float longueurRepos;
+        public float longueurCourante;
 
         public Line(int pointA, int pointB, float longueur)
         {
             this.pointA = pointA;
             this.pointB = pointB;
-            this.longueur = longueur;
+            this.longueurRepos = longueur;
+            this.longueurCourante = longueur;
         }
     }
 
-    struct Point
+    class Point
     {
-        GameObject go;
-        bool immobile;
+        public GameObject go;
+        public bool immobile;
+        public Vector3 vitesse = Vector3.zero;
         
+        public Point(GameObject go, bool immobile)
+        {
+            this.go = go;
+            this.immobile = immobile;
+        }
     }
 
-    private List<GameObject> points = new List<GameObject>();
+    private List<Point> points = new List<Point>();
     private List<Line> connections = new List<Line>();
 
-    public GameObject prefab;
+    public float gravityForce = 1.0f;
+    public float elasticForce = 0.5f;
+    public float absorption = 0.5f;
+
+    public GameObject prefabSphere;
+    public GameObject prefabCube;
 
     private void Start()
     {
         int count = 0;
         for (int i = 0; i < 11; i+=1)
         {
-            GameObject go = GameObject.Instantiate(prefab);
+            GameObject go;
+            if (i % 4 == 0)
+            {
+                go = GameObject.Instantiate(prefabCube);
+            }
+            else
+            {
+                go = GameObject.Instantiate(prefabSphere);
+            }
             go.name = "Point " + count++;
             if (i % 2 == 1)
             {
@@ -46,17 +67,24 @@ public class PolyBridge : MonoBehaviour
             {
                 go.transform.position = new Vector3(i, 0, 0);
             }
-            points.Add(go);
+            if (i % 4 == 0)
+            {
+                points.Add(new Point(go, true));
+            }
+            else
+            {
+                points.Add(new Point(go, false));
+            }
         }
 
 
         for (int i = 0; i < points.Count-1; i+=2)
         {
-            connections.Add(new Line(i, i + 1, Vector3.Distance(points[i].transform.position, points[i + 1].transform.position)));
+            connections.Add(new Line(i, i + 1, Vector3.Distance(points[i].go.transform.position, points[i + 1].go.transform.position)));
 
-            connections.Add(new Line(i, i + 2, Vector3.Distance(points[i].transform.position, points[i + 2].transform.position)));
+            connections.Add(new Line(i, i + 2, Vector3.Distance(points[i].go.transform.position, points[i + 2].go.transform.position)));
 
-            connections.Add(new Line(i + 1, i + 2, Vector3.Distance(points[i + 1].transform.position, points[i + 2].transform.position)));
+            connections.Add(new Line(i + 1, i + 2, Vector3.Distance(points[i + 1].go.transform.position, points[i + 2].go.transform.position)));
 
         }
         
@@ -68,7 +96,33 @@ public class PolyBridge : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //points[0].transform.position = new Vector3(points[0].transform.position.x , points[0].transform.position.y + 0.001f, points[0].transform.position.z);
+        for(int i = 0; i<points.Count;i++)
+        {
+            if (!points[i].immobile)
+            {
+                //Gravity
+                Vector3 forces = new Vector3(0, - gravityForce, 0);
+
+                //Update longueurCourante
+                for(int j = 0; j<connections.Count;j++)
+                {
+                    if(connections[j].pointA == i)
+                    {
+                        connections[j].longueurCourante = Vector3.Distance(points[i].go.transform.position, points[connections[j].pointB].go.transform.position);
+                        forces += elasticForce * (connections[j].longueurRepos - connections[j].longueurCourante) * (points[i].go.transform.position - points[connections[j].pointB].go.transform.position);
+                    }
+                    if (connections[j].pointB == i)
+                    {
+                        connections[j].longueurCourante = Vector3.Distance(points[connections[j].pointA].go.transform.position, points[i].go.transform.position);
+                        forces += elasticForce * (connections[j].longueurRepos - connections[j].longueurCourante) * (points[i].go.transform.position - points[connections[j].pointA].go.transform.position);
+                    }
+                }
+
+                points[i].vitesse += forces * Time.deltaTime * 5;
+                points[i].vitesse *= absorption;
+                points[i].go.transform.position += points[i].vitesse * Time.deltaTime;
+            }
+        }
     }
 
     private void OnDrawGizmos()
@@ -82,14 +136,9 @@ public class PolyBridge : MonoBehaviour
                 for (int i = 0; i < connections.Count; i+=1)
                 {
                     //Gizmos.DrawSphere(listePoints[i], 0.1f);
-                    Debug.Log(connections[i].longueur);
-                    Gizmos.DrawLine(points[connections[i].pointA].transform.position, points[connections[i].pointB].transform.position);
+                    Gizmos.DrawLine(points[connections[i].pointA].go.transform.position, points[connections[i].pointB].go.transform.position);
                 }
-                Gizmos.color = Color.yellow;
-                foreach (GameObject go in points)
-                {
-                    //Gizmos.DrawSphere(go.transform.position, 0.1f);
-                }
+                
             }
         }
     }

@@ -261,7 +261,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b1a2b38fca660934f92742dfe5c469ed, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  prefab: {fileID: 5815775927594690834, guid: 06ef7a9154437fa43b29fa91e75fcaf5, type: 3}
+  gravityForce: 1
+  elasticForce: 0.5
+  absorption: 0.99
+  prefabSphere: {fileID: 5815775927594690834, guid: 06ef7a9154437fa43b29fa91e75fcaf5, type: 3}
+  prefabCube: {fileID: 2592968526263209090, guid: 2f53175f2d16b88489d1288ae9ab4a1b, type: 3}
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
